@@ -217,7 +217,7 @@ def main():
         if current_month.is_setup():
             st.success("✅ This month is already set up! Head to Settings if you need to make changes.")
         else:
-            budget_input = st.number_input("Monthly Budget (SAR)", min_value=1.0, value=5000.0, step=100.0)
+            budget_input = st.number_input("Monthly Budget (SAR)", min_value=1.0, value=8000.0, step=100.0)
             cat_choice = st.radio("Category Setup", ["Use Default Categories", "Create Custom Categories"])
             
             if cat_choice == "Use Default Categories":
@@ -250,25 +250,31 @@ def main():
                     exp_date = st.date_input("Expense Date", value=dt_date.today())
                     exp_cat = st.selectbox("Category", list(current_month.categories.keys()))
                 with col2:
-                    exp_amount = st.number_input("Amount (SAR)", min_value=0.00, step=10.0)
+
+                    exp_amount = st.number_input("Amount (SAR)", min_value=0.00, value=0.00, step=10.0)
                     exp_desc = st.text_input("Description")
                 
                 submit_expense = st.form_submit_button("Save Expense")
                 
                 if submit_expense:
-                    target_month_key = month_key_from_date(exp_date)
-                    target_month = app.get_month(target_month_key)
-                    
-                    if not target_month.is_setup():
-                        st.error(f"❌ The month {target_month_key} is not set up. Set it up first.")
+                    # Add the check for zero value here
+                    if exp_amount <= 0:
+                        st.error("❌ The expense amount must be greater than 0.00 SAR.")
                     else:
-                        current_total = target_month.total_expenses()
-                        if current_total + exp_amount > target_month.budget + 1e-9:
-                            st.error(f"🛑 Monthly budget exceeded! You only have {target_month.budget - current_total:.2f} SAR left.")
+
+                        target_month_key = month_key_from_date(exp_date)
+                        target_month = app.get_month(target_month_key)
+                        
+                        if not target_month.is_setup():
+                            st.error(f"❌ The month {target_month_key} is not set up. Set it up first.")
                         else:
-                            target_month.add_expense(exp_date, exp_amount, exp_cat, exp_desc)
-                            st.success(f"✅ Expense of {exp_amount:.2f} SAR added to {exp_cat} on {exp_date}!")
-                            st.rerun()
+                            current_total = target_month.total_expenses()
+                            if current_total + exp_amount > target_month.budget + 1e-9:
+                                st.error(f"🛑 Monthly budget exceeded! You only have {target_month.budget - current_total:.2f} SAR left.")
+                            else:
+                                target_month.add_expense(exp_date, exp_amount, exp_cat, exp_desc)
+                                st.success(f"✅ Expense of {exp_amount:.2f} SAR added to {exp_cat} on {exp_date}!")
+                                st.rerun()
 
     # ------------------ TAB 3: Overview ------------------
     with tab3:
@@ -306,6 +312,8 @@ def main():
             
 
 
+
+
             st.subheader("Category Limits & Progress")
             totals = current_month.total_by_category()
             for cat_name, cat in current_month.categories.items():
@@ -332,8 +340,8 @@ def main():
 
 
 
-            
-            # Expense Table
+
+            # # Expense Table
             st.subheader("Recent Expenses")
             if not current_month.expenses:
                 st.info("No expenses logged yet.")
@@ -342,7 +350,8 @@ def main():
                 df.rename(columns={'expense_id': 'ID', 'd': 'Date', 'amount': 'Amount (SAR)', 'category': 'Category', 'description': 'Description'}, inplace=True)
                 st.dataframe(df, use_container_width=True, hide_index=True)
 
-    
+
+
 
     # ------------------ TAB 4: Settings ------------------
     with tab4:
@@ -351,7 +360,7 @@ def main():
             st.warning("⚠️ Please complete Month Setup first.")
         else:
             with st.expander("Update Monthly Budget"):
-                new_budget = st.number_input("New Budget (SAR)", min_value=1.0, value=current_month.budget)
+                new_budget = st.number_input("New Budget (SAR)", min_value=1.0, value=current_month.budget, step=100.0)
                 if st.button("Update Budget"):
                     current_month.set_budget(new_budget)
                     st.success("✅ Budget updated!")
