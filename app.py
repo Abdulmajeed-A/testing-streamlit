@@ -212,6 +212,35 @@ def main():
     tab1, tab2, tab3, tab4 = st.tabs(["⚙️ Month Setup", "➕ Add Expense", "📊 Overview", "🛠️ Settings"])
 
     # ------------------ TAB 1: Setup ------------------
+
+    # with tab1:
+    #     st.header(f"Setup for {selected_month_key}")
+    #     if current_month.is_setup():
+    #         st.success("✅ This month is already set up! Head to Settings if you need to make changes.")
+    #     else:
+    #         budget_input = st.number_input("Monthly Budget (SAR)", min_value=1.0, value=8000.0, step=100.0)
+    #         cat_choice = st.radio("Category Setup", ["Use Default Categories", "Create Custom Categories"])
+            
+    #         if cat_choice == "Use Default Categories":
+    #             st.write("**Default Categories Preview:**")
+    #             preview_data = [{"Category": c.name, "Type": c.limit_type.title(), "Limit": c.display_limit(), "Est. SAR": c.calc_limit(budget_input)} for c in app.default_categories]
+    #             st.dataframe(pd.DataFrame(preview_data), hide_index=True)
+                
+    #             if st.button("Save Month Setup"):
+    #                 current_month.set_budget(budget_input)
+    #                 for c in app.default_categories:
+    #                     current_month.add_category(Category(c.name, c.limit_type, c.value))
+    #                 st.success("✅ Month setup saved!")
+    #                 st.rerun()
+    #         else:
+    #             st.info("Custom categories can be added individually in the Settings tab after setting the initial budget.")
+    #             if st.button("Save Budget & Proceed to Settings"):
+    #                 current_month.set_budget(budget_input)
+    #                 st.success("✅ Budget saved! Please go to the Settings tab to add your custom categories.")
+    #                 st.rerun()
+
+
+    # ------------------ TAB 1: Setup ------------------
     with tab1:
         st.header(f"Setup for {selected_month_key}")
         if current_month.is_setup():
@@ -232,11 +261,51 @@ def main():
                     st.success("✅ Month setup saved!")
                     st.rerun()
             else:
-                st.info("Custom categories can be added individually in the Settings tab after setting the initial budget.")
-                if st.button("Save Budget & Proceed to Settings"):
-                    current_month.set_budget(budget_input)
-                    st.success("✅ Budget saved! Please go to the Settings tab to add your custom categories.")
-                    st.rerun()
+                st.subheader("Define Custom Categories")
+                
+                # Initialize a temporary list in session state for custom categories
+                if 'temp_cats' not in st.session_state:
+                    st.session_state.temp_cats = []
+
+                # Form to add a category to the temporary list
+                with st.form("custom_cat_adder", clear_on_submit=True):
+                    col1, col2, col3 = st.columns([3, 2, 2])
+                    new_name = col1.text_input("Category Name")
+                    new_type = col2.selectbox("Type", ["percent", "fixed"])
+                    new_val = col3.number_input("Value (SAR or %)", min_value=0.0, step=1.0)
+                    
+                    if st.form_submit_button("➕ Add to List"):
+                        if new_name:
+                            st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
+                        else:
+                            st.error("Please enter a category name.")
+
+                # Display the current list of custom categories
+                if st.session_state.temp_cats:
+                    st.write("**Your Custom Categories:**")
+                    temp_df = pd.DataFrame([
+                        {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit()} 
+                        for c in st.session_state.temp_cats
+                    ])
+                    st.dataframe(temp_df, hide_index=True)
+
+                    if st.button("Clear List"):
+                        st.session_state.temp_cats = []
+                        st.rerun()
+
+                # Final Save Button
+                if st.button("Finalize Setup & Save All"):
+                    if not st.session_state.temp_cats:
+                        st.error("Please add at least one category.")
+                    else:
+                        current_month.set_budget(budget_input)
+                        for c in st.session_state.temp_cats:
+                            current_month.add_category(c)
+                        st.session_state.temp_cats = [] # Clear temp list
+                        st.success("✅ Custom setup saved!")
+                        st.rerun()
+
+
 
     # ------------------ TAB 2: Add Expense ------------------
     with tab2:
@@ -372,7 +441,7 @@ def main():
                 with st.form("add_cat_form"):
                     new_c_name = st.text_input("Category Name")
                     new_c_type = st.selectbox("Limit Type", ["percent", "fixed"])
-                    new_c_val = st.number_input("Value", min_value=0.0)
+                    new_c_val = st.number_input("Value", min_value=0.0, step=10.0)
                     if st.form_submit_button("Add Category"):
                         if current_month.add_category(Category(new_c_name, new_c_type, new_c_val)):
                             st.success(f"✅ {new_c_name} added!")
@@ -412,7 +481,7 @@ def main():
                     st.write("---")
                     st.write("**Edit Expense details:**")
                     with st.form("edit_exp_form"):
-                        edit_amt = st.number_input("New Amount", min_value=0.01, value=float(target_exp.amount))
+                        edit_amt = st.number_input("New Amount", min_value=0.01, value=float(target_exp.amount), step=10.0)
                         edit_cat = st.selectbox("New Category", list(current_month.categories.keys()), index=list(current_month.categories.keys()).index(target_exp.category))
                         edit_desc = st.text_input("New Description", value=target_exp.description)
                         
