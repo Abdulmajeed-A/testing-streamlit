@@ -250,7 +250,7 @@ def main():
                     exp_date = st.date_input("Expense Date", value=dt_date.today())
                     exp_cat = st.selectbox("Category", list(current_month.categories.keys()))
                 with col2:
-                    exp_amount = st.number_input("Amount (SAR)", min_value=0.01, step=10.0)
+                    exp_amount = st.number_input("Amount (SAR)", min_value=0.00, step=10.0)
                     exp_desc = st.text_input("Description")
                 
                 submit_expense = st.form_submit_button("Save Expense")
