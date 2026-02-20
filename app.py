@@ -260,50 +260,71 @@ def main():
                         current_month.add_category(Category(c.name, c.limit_type, c.value))
                     st.success("✅ Month setup saved!")
                     st.rerun()
-            else:
-                st.subheader("Define Custom Categories")
-                
-                # Initialize a temporary list in session state for custom categories
-                if 'temp_cats' not in st.session_state:
-                    st.session_state.temp_cats = []
+                else:
 
-                # Form to add a category to the temporary list
-                with st.form("custom_cat_adder", clear_on_submit=True):
-                    col1, col2, col3 = st.columns([3, 2, 2])
-                    new_name = col1.text_input("Category Name")
-                    new_type = col2.selectbox("Type", ["percent", "fixed"])
-                    new_val = col3.number_input("Value (SAR or %)", min_value=0.0, step=1.0)
+                    st.subheader("Define Custom Categories")
                     
-                    if st.form_submit_button("➕ Add to List"):
-                        if new_name:
-                            st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
-                        else:
-                            st.error("Please enter a category name.")
-
-                # Display the current list of custom categories
-                if st.session_state.temp_cats:
-                    st.write("**Your Custom Categories:**")
-                    temp_df = pd.DataFrame([
-                        {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit()} 
-                        for c in st.session_state.temp_cats
-                    ])
-                    st.dataframe(temp_df, hide_index=True)
-
-                    if st.button("Clear List"):
+                    if 'temp_cats' not in st.session_state:
                         st.session_state.temp_cats = []
-                        st.rerun()
 
-                # Final Save Button
-                if st.button("Finalize Setup & Save All"):
-                    if not st.session_state.temp_cats:
-                        st.error("Please add at least one category.")
-                    else:
-                        current_month.set_budget(budget_input)
-                        for c in st.session_state.temp_cats:
-                            current_month.add_category(c)
-                        st.session_state.temp_cats = [] # Clear temp list
-                        st.success("✅ Custom setup saved!")
-                        st.rerun()
+                    # Calculate current totals for validation
+                    current_total_pct = sum(c.value for c in st.session_state.temp_cats if c.limit_type == "percent")
+                    current_total_fixed = sum(c.value for c in st.session_state.temp_cats if c.limit_type == "fixed")
+                    remaining_pct = 100.0 - current_total_pct
+                    remaining_fixed = budget_input - current_total_fixed
+
+                    # Display remaining budget counters
+                    col_stat1, col_stat2 = st.columns(2)
+                    col_stat1.metric("Remaining Percentage", f"{remaining_pct:g}%")
+                    col_stat2.metric("Remaining Fixed Amount", f"{remaining_fixed:g} SAR")
+
+                    with st.form("custom_cat_adder", clear_on_submit=True):
+                        col1, col2, col3 = st.columns([3, 2, 2])
+                        new_name = col1.text_input("Category Name")
+                        new_type = col2.selectbox("Type", ["percent", "fixed"])
+                        new_val = col3.number_input("Value", min_value=0.0, step=1.0)
+                        
+                        if st.form_submit_button("➕ Add to List"):
+                            # 1. Prevent zero or empty values
+                            if not new_name:
+                                st.error("❌ Category name cannot be empty.")
+                            elif new_val <= 0:
+                                st.error("❌ Value must be greater than zero.")
+                            
+                            # 2. Prevent Percentage Overflow
+                            elif new_type == "percent" and new_val > remaining_pct:
+                                st.error(f"❌ Total percentage cannot exceed 100%. You only have {remaining_pct:g}% left.")
+                            
+                            # 3. Prevent Fixed Amount Overflow
+                            elif new_type == "fixed" and new_val > remaining_fixed:
+                                st.error(f"❌ Total fixed amounts cannot exceed the budget. You only have {remaining_fixed:g} SAR left.")
+                            
+                            else:
+                                st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
+                                st.rerun()
+
+                    if st.session_state.temp_cats:
+                        st.write("**Your Custom Categories:**")
+                        temp_df = pd.DataFrame([
+                            {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit()} 
+                            for c in st.session_state.temp_cats
+                        ])
+                        st.dataframe(temp_df, hide_index=True)
+
+                        if st.button("Clear List"):
+                            st.session_state.temp_cats = []
+                            st.rerun()
+
+                    if st.button("Finalize Setup & Save All"):
+                        if not st.session_state.temp_cats:
+                            st.error("Please add at least one category.")
+                        else:
+                            current_month.set_budget(budget_input)
+                            for c in st.session_state.temp_cats:
+                                current_month.add_category(c)
+                            st.session_state.temp_cats = [] 
+                            st.success("✅ Custom setup saved!")
+                            st.rerun()
 
 
 
