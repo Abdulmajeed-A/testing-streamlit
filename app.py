@@ -325,7 +325,7 @@ def main():
                 # Create a custom HTML progress bar
                 custom_progress_html = f"""
                 <div style="width: 100%; background-color: #444444; border-radius: 5px; margin-bottom: 20px;">
-                    <div style="width: {visual_width}%; height: 12px; background-color: {bar_color}; border-radius: 5px; transition: width 0.5s;"></div>
+                    <div style="width: {visual_width}%; height: 8px; background-color: {bar_color}; border-radius: 5px; transition: width 0.5s;"></div>
                 </div>
                 """
                 st.markdown(custom_progress_html, unsafe_allow_html=True)
