@@ -304,14 +304,7 @@ def main():
             
             # st.divider()
             
-            # # Expense Table
-            # st.subheader("Recent Expenses")
-            # if not current_month.expenses:
-            #     st.info("No expenses logged yet.")
-            # else:
-            #     df = pd.DataFrame([vars(e) for e in current_month.expenses])
-            #     df.rename(columns={'expense_id': 'ID', 'd': 'Date', 'amount': 'Amount (SAR)', 'category': 'Category', 'description': 'Description'}, inplace=True)
-            #     st.dataframe(df, use_container_width=True, hide_index=True)
+
 
             st.subheader("Category Limits & Progress")
             totals = current_month.total_by_category()
@@ -336,6 +329,20 @@ def main():
                 </div>
                 """
                 st.markdown(custom_progress_html, unsafe_allow_html=True)
+
+
+
+            
+            # Expense Table
+            st.subheader("Recent Expenses")
+            if not current_month.expenses:
+                st.info("No expenses logged yet.")
+            else:
+                df = pd.DataFrame([vars(e) for e in current_month.expenses])
+                df.rename(columns={'expense_id': 'ID', 'd': 'Date', 'amount': 'Amount (SAR)', 'category': 'Category', 'description': 'Description'}, inplace=True)
+                st.dataframe(df, use_container_width=True, hide_index=True)
+
+    
 
     # ------------------ TAB 4: Settings ------------------
     with tab4:
