@@ -21,6 +21,12 @@ def apply_custom_width():
             }
         }
 
+        @media (max-width: 900px) {
+            .block-container {
+                max-width: 90%;
+            }
+        }
+
         /* Optional: Full width on mobile */
         @media (max-width: 640px) {
             .block-container {
