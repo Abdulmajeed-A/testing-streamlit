@@ -10,6 +10,9 @@ def month_key_from_date(d):
     return d.strftime("%Y-%m")
 
 def calc_status(spent, limit):
+
+    return ""
+
     if limit <= 0.00:
         return "ℹ️"
     ratio = spent / limit
@@ -19,8 +22,8 @@ def calc_status(spent, limit):
         return "⚠️"
     if ratio < 1.00:
         return "🔶"
-    #return "🛑"
-    return ""
+    return "🛑"
+
 
 def get_progress_color(ratio):
     if ratio < 0.50:
