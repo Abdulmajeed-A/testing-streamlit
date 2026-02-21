@@ -10,7 +10,7 @@ def month_key_from_date(d):
     return d.strftime("%Y-%m")
 
 def calc_status(spent, limit):
-    if limit <= 0:
+    if limit <= 0.00:
         return "ℹ️"
     ratio = spent / limit
     if ratio < 0.50:
