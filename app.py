@@ -164,7 +164,8 @@ class BudgetMonth:
             icon = calc_status(spent, limit)
             if icon in counts:
                 counts[icon] += 1
-        return counts
+        #return counts
+        return ""
 
 class BudgetTrackerApp:
     def __init__(self):
