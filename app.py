@@ -10,20 +10,26 @@ def apply_custom_width():
         <style>
         /* This targets the main content container */
         .block-container {
-            max-width: 60%;
+            max-width: 65%;
 
         }
         
         /* Optional: Adjust for medium screens so it doesn't get too narrow */
-        @media (max-width: 1200px) {
+        @media (max-width: 1500px) {
             .block-container {
                 max-width: 80%;
             }
         }
 
+            @media (max-width: 1200px) {
+            .block-container {
+                max-width: 85%;
+            }
+        }
+
         @media (max-width: 900px) {
             .block-container {
-                max-width: 90%;
+                max-width: 95%;
             }
         }
 
