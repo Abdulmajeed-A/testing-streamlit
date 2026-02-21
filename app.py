@@ -378,7 +378,7 @@ def main():
             col1, col2, col3 = st.columns(3)
             col1.metric("Total Budget", f"{current_month.budget:.2f} SAR")
             col2.metric("Total Spent", f"{total_spent:.2f} SAR")
-            col3.metric("Remaining", f"{remaining:.2f} SAR", delta=f"{-total_spent:.2f} SAR", delta_color="inverse")
+            col3.metric("Remaining", f"{remaining:.2f} SAR", delta=f"{-total_spent:.2f} SAR", delta_color="normal")
             
             st.divider()
             
