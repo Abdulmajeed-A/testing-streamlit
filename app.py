@@ -486,68 +486,66 @@ def main():
                 #     else:
                 #         st.error(msg)
 
-                st.subheader("Define Custom Categories")
+
+                st.subheader("Current Allocation")
                 
-                if 'temp_cats' not in st.session_state:
-                    st.session_state.temp_cats = []
+                # 1. Calculate real-time allocation
+                # We calculate based on existing categories in the current_month object
+                allocated_sar = sum(c.calc_limit(current_month.budget) for c in current_month.categories.values())
+                remaining_sar = current_month.budget - allocated_sar
+                remaining_pct = (remaining_sar / current_month.budget) * 100 if current_month.budget > 0 else 0
 
-                # 1. Calculate how much is already allocated in SAR
-                allocated_sar = sum(c.calc_limit(budget_input) for c in st.session_state.temp_cats)
-                remaining_sar = budget_input - allocated_sar
-                remaining_pct = (remaining_sar / budget_input) * 100 if budget_input > 0 else 0
-
-                # Display remaining allocation info
                 col_info1, col_info2 = st.columns(2)
                 col_info1.metric("Remaining Amount", f"{max(0.0, remaining_sar):.2f} SAR")
-                col_info2.metric("Remaining Percentage", f"{max(0.0, remaining_pct):.2f}%")
+                col_info2.metric("Remaining Percentage", f"{max(0.0, remaining_pct):.1f}%")
 
-                # Form to add a category
-                with st.form("custom_cat_adder", clear_on_submit=True):
+                st.divider()
+
+                # 2. Add New Category Form (Same logic as Setup)
+                st.write("**Add New Category**")
+                with st.form("settings_cat_adder", clear_on_submit=True):
                     col1, col2, col3 = st.columns([3, 2, 2])
                     new_name = col1.text_input("Category Name")
                     new_type = col2.selectbox("Type", ["percent", "fixed"])
                     new_val = col3.number_input("Value", min_value=0.0, step=1.0)
                     
-                    if st.form_submit_button("➕ Add to List"):
-                        # Requirement 1: Prevent zero value
+                    if st.form_submit_button("➕ Add Category"):
                         if new_val <= 0:
                             st.error("❌ Value must be greater than zero.")
                         elif not new_name.strip():
                             st.error("❌ Category name is required.")
+                        elif new_name in current_month.categories:
+                            st.error("❌ A category with this name already exists.")
                         else:
-                            # Calculate what this new entry would cost in SAR
-                            requested_sar = new_val if new_type == "fixed" else (new_val / 100 * budget_input)
+                            requested_sar = new_val if new_type == "fixed" else (new_val / 100 * current_month.budget)
                             
-                            # Requirement 2 & 3: Prevent exceeding remaining budget
-                            if requested_sar > (remaining_sar + 1e-9): # 1e-9 handles floating point precision
+                            if requested_sar > (remaining_sar + 1e-9):
                                 if new_type == "percent":
                                     st.error(f"❌ Limits exceeded. Max available: {remaining_pct:.2f}%")
                                 else:
                                     st.error(f"❌ Limits exceeded. Max available: {remaining_sar:.2f} SAR")
                             else:
-                                st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
-                                st.rerun()
+                                if current_month.add_category(Category(new_name, new_type, new_val)):
+                                    st.success(f"✅ {new_name} added!")
+                                    st.rerun()
 
-                # Display and Save logic
-                if st.session_state.temp_cats:
-                    st.write("**Your Custom Categories:**")
-                    temp_df = pd.DataFrame([
-                        {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit(), "SAR Value": c.calc_limit(budget_input)} 
-                        for c in st.session_state.temp_cats
-                    ])
-                    st.dataframe(temp_df, hide_index=True)
+                st.divider()
 
-                    if st.button("Clear List"):
-                        st.session_state.temp_cats = []
-                        st.rerun()
-
-                    if st.button("Finalize Setup & Save All"):
-                        current_month.set_budget(budget_input)
-                        for c in st.session_state.temp_cats:
-                            current_month.add_category(c)
-                        st.session_state.temp_cats = [] 
-                        st.success("✅ Custom setup saved!")
-                        st.rerun()
+                # 3. Delete Category Section
+                st.write("**Delete Category**")
+                if not current_month.categories:
+                    st.info("No categories to delete.")
+                else:
+                    del_c_name = st.selectbox("Select Category to Remove", list(current_month.categories.keys()))
+                    del_move = st.checkbox("Move existing expenses to 'Other'?", value=True)
+                    
+                    if st.button("🗑️ Delete Selected Category"):
+                        ok, msg = current_month.delete_category(del_c_name, del_move)
+                        if ok:
+                            st.success(msg)
+                            st.rerun()
+                        else:
+                            st.error(msg)
 
 
 
