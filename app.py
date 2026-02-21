@@ -19,7 +19,8 @@ def calc_status(spent, limit):
         return "⚠️"
     if ratio < 1.00:
         return "🔶"
-    return "🛑"
+    #return "🛑"
+    return ""
 
 def get_progress_color(ratio):
     if ratio < 0.50:
@@ -164,8 +165,7 @@ class BudgetMonth:
             icon = calc_status(spent, limit)
             if icon in counts:
                 counts[icon] += 1
-        #return counts
-        return ""
+        return counts
 
 class BudgetTrackerApp:
     def __init__(self):
