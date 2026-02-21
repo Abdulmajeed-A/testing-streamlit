@@ -267,17 +267,17 @@ def main():
                     if 'temp_cats' not in st.session_state:
                         st.session_state.temp_cats = []
 
-                    # Calculate current totals for validation
-                    current_total_pct = sum(c.value for c in st.session_state.temp_cats if c.limit_type == "percent")
-                    current_total_fixed = sum(c.value for c in st.session_state.temp_cats if c.limit_type == "fixed")
-                    remaining_pct = 100.0 - current_total_pct
-                    remaining_fixed = budget_input - current_total_fixed
+                    # 1. Calculate how much is already allocated in SAR
+                    allocated_sar = sum(c.calc_limit(budget_input) for c in st.session_state.temp_cats)
+                    remaining_sar = budget_input - allocated_sar
+                    remaining_pct = (remaining_sar / budget_input) * 100 if budget_input > 0 else 0
 
-                    # Display remaining budget counters
-                    col_stat1, col_stat2 = st.columns(2)
-                    col_stat1.metric("Remaining Percentage", f"{remaining_pct:g}%")
-                    col_stat2.metric("Remaining Fixed Amount", f"{remaining_fixed:g} SAR")
+                    # Display remaining allocation info
+                    col_info1, col_info2 = st.columns(2)
+                    col_info1.metric("Remaining Amount", f"{max(0.0, remaining_sar):.2f} SAR")
+                    col_info2.metric("Remaining Percentage", f"{max(0.0, remaining_pct):.1f}%")
 
+                    # Form to add a category
                     with st.form("custom_cat_adder", clear_on_submit=True):
                         col1, col2, col3 = st.columns([3, 2, 2])
                         new_name = col1.text_input("Category Name")
@@ -285,28 +285,30 @@ def main():
                         new_val = col3.number_input("Value", min_value=0.0, step=1.0)
                         
                         if st.form_submit_button("➕ Add to List"):
-                            # 1. Prevent zero or empty values
-                            if not new_name:
-                                st.error("❌ Category name cannot be empty.")
-                            elif new_val <= 0:
+                            # Requirement 1: Prevent zero value
+                            if new_val <= 0:
                                 st.error("❌ Value must be greater than zero.")
-                            
-                            # 2. Prevent Percentage Overflow
-                            elif new_type == "percent" and new_val > remaining_pct:
-                                st.error(f"❌ Total percentage cannot exceed 100%. You only have {remaining_pct:g}% left.")
-                            
-                            # 3. Prevent Fixed Amount Overflow
-                            elif new_type == "fixed" and new_val > remaining_fixed:
-                                st.error(f"❌ Total fixed amounts cannot exceed the budget. You only have {remaining_fixed:g} SAR left.")
-                            
+                            elif not new_name.strip():
+                                st.error("❌ Category name is required.")
                             else:
-                                st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
-                                st.rerun()
+                                # Calculate what this new entry would cost in SAR
+                                requested_sar = new_val if new_type == "fixed" else (new_val / 100 * budget_input)
+                                
+                                # Requirement 2 & 3: Prevent exceeding remaining budget
+                                if requested_sar > (remaining_sar + 1e-9): # 1e-9 handles floating point precision
+                                    if new_type == "percent":
+                                        st.error(f"❌ Limits exceeded. Max available: {remaining_pct:.2f}%")
+                                    else:
+                                        st.error(f"❌ Limits exceeded. Max available: {remaining_sar:.2f} SAR")
+                                else:
+                                    st.session_state.temp_cats.append(Category(new_name, new_type, new_val))
+                                    st.rerun()
 
+                    # Display and Save logic
                     if st.session_state.temp_cats:
                         st.write("**Your Custom Categories:**")
                         temp_df = pd.DataFrame([
-                            {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit()} 
+                            {"Category": c.name, "Type": c.limit_type, "Limit": c.display_limit(), "SAR Value": c.calc_limit(budget_input)} 
                             for c in st.session_state.temp_cats
                         ])
                         st.dataframe(temp_df, hide_index=True)
@@ -315,10 +317,7 @@ def main():
                             st.session_state.temp_cats = []
                             st.rerun()
 
-                    if st.button("Finalize Setup & Save All"):
-                        if not st.session_state.temp_cats:
-                            st.error("Please add at least one category.")
-                        else:
+                        if st.button("Finalize Setup & Save All"):
                             current_month.set_budget(budget_input)
                             for c in st.session_state.temp_cats:
                                 current_month.add_category(c)
