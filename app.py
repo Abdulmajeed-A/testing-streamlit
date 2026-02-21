@@ -411,7 +411,7 @@ def main():
                 icon = calc_status(spent, limit)
                 pct = 0.0 if limit <= 0 else (spent / limit)
                 
-                st.write(f"**{cat_name}** {icon} ({spent:.2f} / {limit:.2f} SAR)")
+                st.write(f"**{cat_name}** {icon} ({spent:.2f} / {limit:.2f} SAR) {spent / limit * 100} %")
                 
                 # Get the dynamic color based on spending ratio
                 bar_color = get_progress_color(pct)
