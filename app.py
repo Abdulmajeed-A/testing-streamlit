@@ -11,11 +11,7 @@ def apply_custom_width():
         /* This targets the main content container */
         .block-container {
             max-width: 70%;
-            padding-top: 2rem;
-            padding-right: 1rem;
-            padding-left: 1rem;
-            padding-bottom: 2rem;
-            margin: auto;
+
         }
         
         /* Optional: Adjust for medium screens so it doesn't get too narrow */
@@ -36,6 +32,12 @@ def apply_custom_width():
         unsafe_allow_html=True
     )
 
+            # padding-top: 2rem;
+            # padding-right: 1rem;
+            # padding-left: 1rem;
+            # padding-bottom: 2rem;
+            # margin: auto;
+    
 # =========================
 # Helper Functions
 # =========================
