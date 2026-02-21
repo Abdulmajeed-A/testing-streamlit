@@ -10,7 +10,7 @@ def apply_custom_width():
         <style>
         /* This targets the main content container */
         .block-container {
-            max-width: 100%;
+            max-width: 60%;
 
         }
         
