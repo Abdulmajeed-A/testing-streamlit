@@ -3,6 +3,39 @@ import pandas as pd
 from dataclasses import dataclass
 from datetime import date as dt_date, datetime
 
+
+def apply_custom_width():
+    st.markdown(
+        """
+        <style>
+        /* This targets the main content container */
+        .block-container {
+            max-width: 70%;
+            padding-top: 2rem;
+            padding-right: 1rem;
+            padding-left: 1rem;
+            padding-bottom: 2rem;
+            margin: auto;
+        }
+        
+        /* Optional: Adjust for medium screens so it doesn't get too narrow */
+        @media (max-width: 1200px) {
+            .block-container {
+                max-width: 60%;
+            }
+        }
+
+        /* Optional: Full width on mobile */
+        @media (max-width: 640px) {
+            .block-container {
+                max-width: 100%;
+            }
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
 # =========================
 # Helper Functions
 # =========================
@@ -196,6 +229,7 @@ def init_session():
 
 def main():
     st.set_page_config(page_title="Budget Tracker", page_icon="💰", layout="wide")
+    apply_custom_width()
     init_session()
     app = st.session_state.app
 
